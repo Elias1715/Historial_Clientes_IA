@@ -1,0 +1,177 @@
+{
+  "name": "Historial_Clientes_IA_PUBLIC_VERSION",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm-ia-public",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-432, -208],
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "nombre",
+              "value": "={{ $json.body.nombre }}",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "name": "mensaje",
+              "value": "={{ $json.body.mensaje }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-192, -208],
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 2048,
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-368, 160],
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GOOGLE_GEMINI_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_GEMINI_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1AxxXws-cxRG5c-Ws0rssOgMu5xz3cgW5cZzZzZz7myXY/edit?gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [0, 32],
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_SHEETS_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.prioridad}}",
+                    "rightValue": "Alta",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.prioridad }}",
+                    "rightValue": "Media",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.prioridad }}",
+                    "rightValue": "Baja",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [1104, -48],
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "sendTo": "alerts@company-example.com",
+        "subject": "=🚨 PRIORIDAD ALTA - {{$json.nombre}}",
+        "message": "=Nuevo caso PRIORIDAD ALTA\nCliente: {{$json.nombre}}\nEmail: {{$json.email}}\nMensaje: {{$json.mensaje}}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1328, -240],
+      "name": "Send Internal Alert",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "YOUR_GMAIL_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "Estamos revisando tu caso",
+        "message": "=Hola {{$json.nombre}},\n\nRecibimos tu mensaje y nuestro equipo lo está revisando.\nTe responderemos a la brevedad.\n\nSaludos."
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1552, -256],
+      "name": "Send Customer Email",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "YOUR_GMAIL_CREDENTIAL"
+        }
+      }
+    }
+  ],
+  "active": false,
+  "settings": {},
+  "versionId": "PUBLIC_VERSION_SAFE"
+}
